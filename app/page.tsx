@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { supabaseAdmin } from '@/src/lib/supabase'
 
 type Contact = {
   id: string
@@ -15,20 +16,43 @@ type Conversation = {
 }
 
 async function getConversations(): Promise<Conversation[]> {
-  const baseUrl =
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : ''
+  const { data, error } = await supabaseAdmin
+    .from('conversations')
+    .select(`
+      id,
+      contact_id,
+      last_message_at,
+      created_at
+    `)
+    .order('last_message_at', { ascending: false })
 
-  const res = await fetch(`${baseUrl}/api/conversations`, {
-    cache: 'no-store',
-  })
-
-  if (!res.ok) {
-    throw new Error('Failed to load conversations')
+  if (error) {
+    throw new Error(error.message)
   }
 
-  return res.json()
+  const contactIds = [...new Set((data || []).map((item) => item.contact_id).filter(Boolean))]
+
+  let contactsById: Record<string, Contact> = {}
+
+  if (contactIds.length > 0) {
+    const { data: contacts, error: contactsError } = await supabaseAdmin
+      .from('contacts')
+      .select('id, phone, name')
+      .in('id', contactIds)
+
+    if (contactsError) {
+      throw new Error(contactsError.message)
+    }
+
+    contactsById = Object.fromEntries(
+      (contacts || []).map((contact) => [contact.id, contact])
+    )
+  }
+
+  return (data || []).map((conversation) => ({
+    ...conversation,
+    contact: contactsById[conversation.contact_id] || null,
+  }))
 }
 
 export default async function HomePage() {

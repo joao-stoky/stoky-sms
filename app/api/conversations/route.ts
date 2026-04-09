@@ -16,9 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const contactIds = [
-    ...new Set((data || []).map((item) => item.contact_id).filter(Boolean)),
-  ]
+  const contactIds = [...new Set((data || []).map((item) => item.contact_id).filter(Boolean))]
 
   let contactsById: Record<string, { id: string; phone: string; name: string | null }> = {}
 
@@ -32,9 +30,7 @@ export async function GET() {
       return NextResponse.json({ error: contactsError.message }, { status: 500 })
     }
 
-    contactsById = Object.fromEntries(
-      (contacts || []).map((contact) => [contact.id, contact])
-    )
+    contactsById = Object.fromEntries((contacts || []).map((contact) => [contact.id, contact]))
   }
 
   const result = (data || []).map((conversation) => ({

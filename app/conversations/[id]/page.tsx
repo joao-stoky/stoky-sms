@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import ReplyBox from './reply-box'
+import { supabaseAdmin } from '@/src/lib/supabase'
+
 type Contact = {
   id: string
   phone: string
@@ -26,20 +28,53 @@ type ConversationResponse = {
 }
 
 async function getConversation(id: string): Promise<ConversationResponse> {
-  const baseUrl =
-    process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : ''
+  const { data: conversation, error: conversationError } = await supabaseAdmin
+    .from('conversations')
+    .select('id, contact_id, last_message_at, created_at')
+    .eq('id', id)
+    .maybeSingle()
 
-  const res = await fetch(`${baseUrl}/api/conversations/${id}`, {
-    cache: 'no-store',
-  })
-
-  if (!res.ok) {
-    throw new Error('Failed to load conversation')
+  if (conversationError) {
+    throw new Error(conversationError.message)
   }
 
-  return res.json()
+  if (!conversation) {
+    throw new Error('Conversation not found')
+  }
+
+  const { data: contact, error: contactError } = await supabaseAdmin
+    .from('contacts')
+    .select('id, phone, name')
+    .eq('id', conversation.contact_id)
+    .maybeSingle()
+
+  if (contactError) {
+    throw new Error(contactError.message)
+  }
+
+  const { data: messages, error: messagesError } = await supabaseAdmin
+    .from('messages')
+    .select(`
+      id,
+      direction,
+      body,
+      from_number,
+      to_number,
+      status,
+      created_at
+    `)
+    .eq('conversation_id', id)
+    .order('created_at', { ascending: true })
+
+  if (messagesError) {
+    throw new Error(messagesError.message)
+  }
+
+  return {
+    ...conversation,
+    contact,
+    messages: messages || [],
+  }
 }
 
 type PageProps = {

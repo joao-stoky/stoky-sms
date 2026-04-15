@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY!
 
 if (!supabaseUrl) {
   throw new Error('NEXT_PUBLIC_SUPABASE_URL is missing')
@@ -12,16 +11,7 @@ if (!supabasePublishableKey) {
   throw new Error('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing')
 }
 
-if (!supabaseSecretKey) {
-  throw new Error('SUPABASE_SECRET_KEY is missing')
-}
-
 export const supabaseBrowser = createClient(
   supabaseUrl,
   supabasePublishableKey
-)
-
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseSecretKey
 )

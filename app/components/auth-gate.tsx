@@ -57,18 +57,26 @@ export default function AuthGate({ children }: Props) {
   }, [])
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabaseBrowser.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    })
+  const isLocal =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
 
-    if (error) {
-      console.error('Erro no login com Google:', error.message)
-      alert('Não foi possível iniciar o login com Google.')
-    }
+  const redirectTo = isLocal
+    ? 'http://localhost:3000'
+    : 'https://sms.stokysolutions.com'
+
+  const { error } = await supabaseBrowser.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+    },
+  })
+
+  if (error) {
+    console.error('Erro no login com Google:', error.message)
+    alert('Não foi possível iniciar o login com Google.')
   }
+}
 
   const handleLogout = async () => {
     await supabaseBrowser.auth.signOut()

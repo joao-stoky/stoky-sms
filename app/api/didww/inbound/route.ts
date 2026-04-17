@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     const { data: existingConversation, error: conversationLookupError } =
       await supabaseAdmin
         .from('conversations')
-        .select('id')
+        .select('id, unread_count')
         .eq('contact_id', contactId)
         .maybeSingle()
 
@@ -93,6 +93,8 @@ export async function POST(request: NextRequest) {
           .insert({
             contact_id: contactId,
             last_message_at: smsTime,
+            last_message_preview: messageText,
+            unread_count: 0,
           })
           .select('id')
           .single()
@@ -130,10 +132,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const currentUnreadCount = existingConversation?.unread_count ?? 0
+
     const { error: updateConversationError } = await supabaseAdmin
       .from('conversations')
       .update({
         last_message_at: smsTime,
+        last_message_preview: messageText,
+        unread_count: currentUnreadCount + 1,
       })
       .eq('id', conversationId)
 

@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
         .select('id')
         .single()
 
-    if (insertMessageError) {
+    if (insertMessageError || !insertedMessage) {
       return NextResponse.json(
-        { error: insertMessageError.message },
+        { error: insertMessageError?.message || 'Failed to create message' },
         { status: 500 }
       )
     }
@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       .from('conversations')
       .update({
         last_message_at: now,
+        last_message_preview: messageBody,
       })
       .eq('id', conversationId)
 

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/src/lib/supabase'
 import AuthGate from './components/auth-gate'
+export const dynamic = 'force-dynamic'
 
 type Contact = {
   id: string
@@ -115,8 +116,11 @@ export default async function HomePage() {
               <div className="max-h-[70vh] overflow-y-auto lg:max-h-[calc(100vh-180px)]">
                 {conversations.length > 0 ? (
                   conversations.map((conversation) => {
-                    const name = conversation.contact?.name || 'Unknown contact'
-                    const phone = conversation.contact?.phone || 'No phone'
+                    const name =
+                      conversation.contact?.name?.trim() ||
+                      conversation.contact?.phone ||
+                      'Unknown contact'
+                    const phone = conversation.contact?.phone || ''
 
                     return (
                       <Link

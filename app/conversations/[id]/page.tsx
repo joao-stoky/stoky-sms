@@ -131,24 +131,28 @@ type PageProps = {
 export default async function ConversationPage({ params }: PageProps) {
   const { id } = await params
   const conversation = await getConversation(id)
-  const grouped = conversation.messages.reduce<Array<{ label: string; items: Message[] }>>((acc, message) => {
-    const label = formatDateChip(message.created_at)
-    const last = acc[acc.length - 1]
 
-    if (last && last.label === label) {
-      last.items.push(message)
+  const grouped = conversation.messages.reduce<Array<{ label: string; items: Message[] }>>(
+    (acc, message) => {
+      const label = formatDateChip(message.created_at)
+      const last = acc[acc.length - 1]
+
+      if (last && last.label === label) {
+        last.items.push(message)
+        return acc
+      }
+
+      acc.push({ label, items: [message] })
       return acc
-    }
-
-    acc.push({ label, items: [message] })
-    return acc
-  }, [])
+    },
+    []
+  )
 
   return (
-    <main className="min-h-screen bg-[#0b141a] text-white">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 lg:px-6 lg:py-6">
-        <div className="grid min-h-[calc(100vh-2rem)] overflow-hidden rounded-[28px] border border-white/10 bg-[#111b21] shadow-2xl lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="hidden border-r border-white/10 bg-[#111b21] lg:block">
+    <main className="h-screen overflow-hidden bg-[#0b141a] text-white">
+      <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden px-4 py-4 lg:px-6 lg:py-6">
+        <div className="grid h-full min-h-0 overflow-hidden rounded-[28px] border border-white/10 bg-[#111b21] shadow-2xl lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="hidden min-h-0 overflow-hidden border-r border-white/10 bg-[#111b21] lg:block">
             <div className="border-b border-white/10 bg-[#202c33] px-5 py-5">
               <div className="text-lg font-semibold">Stoky SMS</div>
               <div className="mt-1 text-sm text-[#9fb3c8]">Conversation view</div>
@@ -170,6 +174,7 @@ export default async function ConversationPage({ params }: PageProps) {
                 <div className="mt-4 text-lg font-semibold text-white">
                   {conversation.contact?.name || 'Unknown contact'}
                 </div>
+
                 <div className="mt-1 text-sm text-[#9fb3c8]">
                   {conversation.contact?.phone || 'No phone'}
                 </div>
@@ -181,8 +186,8 @@ export default async function ConversationPage({ params }: PageProps) {
             </div>
           </aside>
 
-          <section className="flex min-h-full flex-col bg-[#0b141a]">
-            <div className="border-b border-white/10 bg-[#202c33] px-4 py-4 sm:px-6">
+          <section className="flex min-h-0 flex-col overflow-hidden bg-[#0b141a]">
+            <div className="shrink-0 border-b border-white/10 bg-[#202c33] px-4 py-4 sm:px-6">
               <div className="flex items-center gap-3">
                 <Link
                   href="/"
@@ -206,8 +211,8 @@ export default async function ConversationPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="relative flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(11,20,26,0.94),rgba(11,20,26,0.97)),radial-gradient(circle_at_top,rgba(37,211,102,0.1),transparent_26%)] px-3 py-5 sm:px-6">
-              <div className="absolute inset-0 opacity-[0.05] [background-image:radial-gradient(#ffffff_1px,transparent_1px)] [background-size:22px_22px]" />
+            <div className="relative min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(11,20,26,0.94),rgba(11,20,26,0.97)),radial-gradient(circle_at_top,rgba(37,211,102,0.1),transparent_26%)] px-3 py-5 sm:px-6">
+              <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:radial-gradient(#ffffff_1px,transparent_1px)] [background-size:22px_22px]" />
 
               <div className="relative mx-auto flex max-w-4xl flex-col gap-5">
                 {grouped.length > 0 ? (
@@ -234,7 +239,10 @@ export default async function ConversationPage({ params }: PageProps) {
                                   : 'rounded-tl-md bg-[#202c33] text-white'
                               }`}
                             >
-                              <div className="whitespace-pre-wrap break-words leading-6">{message.body}</div>
+                              <div className="whitespace-pre-wrap break-words leading-6">
+                                {message.body}
+                              </div>
+
                               <div className="mt-2 flex items-center justify-end gap-2 text-[11px] text-white/65">
                                 <span>{formatBubbleTime(message.created_at)}</span>
                                 <span className="rounded-full bg-black/10 px-2 py-0.5 capitalize">
@@ -255,7 +263,9 @@ export default async function ConversationPage({ params }: PageProps) {
               </div>
             </div>
 
-            <ReplyBox conversationId={conversation.id} />
+            <div className="shrink-0 border-t border-white/10 bg-[#111b21]">
+              <ReplyBox conversationId={conversation.id} />
+            </div>
           </section>
         </div>
       </div>

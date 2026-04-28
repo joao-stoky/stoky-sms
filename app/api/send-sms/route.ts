@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const password = process.env.DIDWW_SMS_PASSWORD
     const from = process.env.DIDWW_SMS_FROM_NUMBER
     const baseUrl =
-      process.env.DIDWW_SMS_BASE_URL || 'https://sms-out.didww.com'
+  process.env.DIDWW_SMS_BASE_URL || 'https://us.sms-out.didww.com'
 
     if (!to || !message) {
       return NextResponse.json(

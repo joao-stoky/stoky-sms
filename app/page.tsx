@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/src/lib/supabase'
 import AuthGate from './components/auth-gate'
+import ConversationList from './components/conversation-list'
 export const dynamic = 'force-dynamic'
 
 type Contact = {
@@ -105,13 +106,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="border-b border-white/10 px-5 py-4">
-                <div className="rounded-2xl bg-[#202c33] px-4 py-3 text-sm text-[#9fb3c8]">
-                  {conversations.length > 0
-                    ? `${conversations.length} conversation${conversations.length === 1 ? '' : 's'} available`
-                    : 'No conversations yet'}
-                </div>
-              </div>
+              <ConversationList conversations={conversations} />
 
               <div className="max-h-[70vh] overflow-y-auto lg:max-h-[calc(100vh-180px)]">
                 {conversations.length > 0 ? (

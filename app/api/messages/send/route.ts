@@ -6,6 +6,10 @@ type SendMessagePayload = {
   body: string
 }
 
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, '')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const payload = (await request.json()) as SendMessagePayload
@@ -19,6 +23,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const username = process.env.DIDWW_SMS_USERNAME
+    const password = process.env.DIDWW_SMS_PASSWORD
+    const fromNumberRaw = process.env.DIDWW_SMS_FROM_NUMBER
+    const baseUrl =
+      process.env.DIDWW_SMS_BASE_URL || 'https://us.sms-out.didww.com'
+
+    if (!username || !password || !fromNumberRaw) {
+      return NextResponse.json(
+        { error: 'Missing DIDWW env vars' },
+        { status: 500 }
+      )
+    }
+
+    const fromNumber = normalizePhone(fromNumberRaw)
+    const now = new Date().toISOString()
 
     const { data: conversation, error: conversationError } = await supabaseAdmin
       .from('conversations')
@@ -53,16 +73,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!contact) {
+    if (!contact?.phone) {
       return NextResponse.json(
-        { error: 'Contact not found' },
+        { error: 'Contact phone not found' },
         { status: 404 }
       )
     }
 
-    const fromNumber = process.env.DIDWW_SMS_FROM_NUMBER || '+10000000000'
-    const toNumber = contact.phone
-    const now = new Date().toISOString()
+    const toNumber = normalizePhone(contact.phone)
+
+    if (!toNumber) {
+      return NextResponse.json(
+        { error: 'Invalid contact phone' },
+        { status: 400 }
+      )
+    }
 
     const { data: insertedMessage, error: insertMessageError } =
       await supabaseAdmin
@@ -86,6 +111,82 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const auth = Buffer.from(`${username}:${password}`).toString('base64')
+
+    const didwwRes = await fetch(`${baseUrl}/outbound_messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/vnd.api+json',
+        Authorization: `Basic ${auth}`,
+      },
+      body: JSON.stringify({
+        data: {
+          type: 'outbound_messages',
+          attributes: {
+            destination: toNumber,
+            source: fromNumber,
+            content: messageBody,
+          },
+        },
+      }),
+    })
+
+    const didwwText = await didwwRes.text()
+
+let didwwResponse: unknown = didwwText
+
+    try {
+      didwwResponse = JSON.parse(didwwText)
+    } catch {}
+
+const providerMessageId =
+  typeof didwwResponse === 'object' &&
+  didwwResponse !== null &&
+  'data' in didwwResponse &&
+  typeof didwwResponse.data === 'object' &&
+  didwwResponse.data !== null &&
+  'id' in didwwResponse.data &&
+  typeof didwwResponse.data.id === 'string'
+    ? didwwResponse.data.id
+    : null
+
+    if (!didwwRes.ok) {
+      await supabaseAdmin
+        .from('messages')
+        .update({
+          status: 'failed',
+          error_message:
+            typeof didwwResponse === 'string'
+              ? didwwResponse
+              : JSON.stringify(didwwResponse),
+        })
+        .eq('id', insertedMessage.id)
+
+      return NextResponse.json(
+        {
+          success: false,
+          messageId: insertedMessage.id,
+          provider_status: didwwRes.status,
+          didww_response: didwwResponse,
+        },
+        { status: didwwRes.status }
+      )
+    }
+
+    const { error: updateMessageError } = await supabaseAdmin
+      .from('messages')
+      .update({
+        status: 'sent',
+      })
+      .eq('id', insertedMessage.id)
+
+    if (updateMessageError) {
+      return NextResponse.json(
+        { error: updateMessageError.message },
+        { status: 500 }
+      )
+    }
+
     const { error: updateConversationError } = await supabaseAdmin
       .from('conversations')
       .update({
@@ -104,6 +205,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       messageId: insertedMessage.id,
+      provider_status: didwwRes.status,
+      didww_response: didwwResponse,
     })
   } catch (error) {
     return NextResponse.json(

@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { supabaseAdmin } from '@/src/lib/supabase'
 import AuthGate from './components/auth-gate'
 import ConversationList from './components/conversation-list'
+
 export const dynamic = 'force-dynamic'
 
 type Contact = {
@@ -16,18 +16,6 @@ type Conversation = {
   last_message_at: string
   created_at: string
   contact: Contact | null
-}
-
-function formatConversationTime(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date)
 }
 
 function getInitials(name: string | null, phone: string | null) {
@@ -57,7 +45,9 @@ async function getConversations(): Promise<Conversation[]> {
     throw new Error(error.message)
   }
 
-  const contactIds = [...new Set((data || []).map((item) => item.contact_id).filter(Boolean))]
+  const contactIds = [
+    ...new Set((data || []).map((item) => item.contact_id).filter(Boolean)),
+  ]
 
   let contactsById: Record<string, Contact> = {}
 
@@ -98,58 +88,20 @@ export default async function HomePage() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25d366] text-base font-bold text-[#0b141a]">
                       SS
                     </div>
+
                     <div>
-                      <h1 className="text-xl font-semibold tracking-tight">Stoky SMS</h1>
-                      <p className="text-sm text-[#9fb3c8]">Your inbox in a friendlier chat layout</p>
+                      <h1 className="text-xl font-semibold tracking-tight">
+                        Stoky SMS
+                      </h1>
+                      <p className="text-sm text-[#9fb3c8]">
+                        Your inbox in a friendlier chat layout
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <ConversationList conversations={conversations} />
-
-              <div className="max-h-[70vh] overflow-y-auto lg:max-h-[calc(100vh-180px)]">
-                {conversations.length > 0 ? (
-                  conversations.map((conversation) => {
-                    const name =
-                      conversation.contact?.name?.trim() ||
-                      conversation.contact?.phone ||
-                      'Unknown contact'
-                    const phone = conversation.contact?.phone || ''
-
-                    return (
-                      <Link
-                        key={conversation.id}
-                        href={`/conversations/${conversation.id}`}
-                        className="flex items-center gap-4 border-b border-white/5 px-5 py-4 transition hover:bg-white/5"
-                      >
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#233138] text-sm font-semibold text-[#d1f4cc]">
-                          {getInitials(
-                            conversation.contact?.name || null,
-                            conversation.contact?.phone || null
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="truncate text-sm font-semibold text-white">{name}</div>
-                            <div className="shrink-0 text-[11px] text-[#9fb3c8]">
-                              {formatConversationTime(conversation.last_message_at)}
-                            </div>
-                          </div>
-
-                          <div className="mt-1 truncate text-sm text-[#9fb3c8]">{phone}</div>
-                          <div className="mt-1 text-xs text-[#7d8f9f]">Tap to open chat</div>
-                        </div>
-                      </Link>
-                    )
-                  })
-                ) : (
-                  <div className="px-5 py-10 text-sm text-[#9fb3c8]">
-                    No conversations yet. Once your SMS messages arrive, they will appear here.
-                  </div>
-                )}
-              </div>
             </aside>
 
             <section className="relative hidden min-h-full bg-[#0b141a] lg:flex lg:flex-col">
@@ -173,25 +125,33 @@ export default async function HomePage() {
                           )
                         : '💬'}
                     </div>
+
                     <div>
                       <div className="text-lg font-semibold text-white">
-                        {featuredConversation?.contact?.name || 'Your SMS conversations'}
+                        {featuredConversation?.contact?.name ||
+                          'Your SMS conversations'}
                       </div>
                       <div className="text-sm text-[#9fb3c8]">
-                        {featuredConversation?.contact?.phone || 'Cleaner layout, easier replies, better focus'}
+                        {featuredConversation?.contact?.phone ||
+                          'Cleaner layout, easier replies, better focus'}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-8 space-y-4">
                     <div className="max-w-[82%] rounded-[20px] rounded-tl-md bg-[#202c33] px-4 py-3 text-sm text-white shadow">
-                      Incoming messages can feel much more natural in a chat style interface.
+                      Incoming messages can feel much more natural in a chat
+                      style interface.
                     </div>
+
                     <div className="ml-auto max-w-[82%] rounded-[20px] rounded-tr-md bg-[#005c4b] px-4 py-3 text-sm text-white shadow">
-                      This redesign gives your inbox a cleaner WhatsApp inspired look without changing your backend flow.
+                      This redesign gives your inbox a cleaner WhatsApp inspired
+                      look without changing your backend flow.
                     </div>
+
                     <div className="max-w-[82%] rounded-[20px] rounded-tl-md bg-[#202c33] px-4 py-3 text-sm text-white shadow">
-                      You can keep your DIDWW and Supabase logic exactly as it is.
+                      You can keep your DIDWW and Supabase logic exactly as it
+                      is.
                     </div>
                   </div>
                 </div>
